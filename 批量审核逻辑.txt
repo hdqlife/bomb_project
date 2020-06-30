@@ -1,0 +1,69 @@
+添加批量审核，审核步骤（伪代码）：
+1.preaudit = post['audit']//将传入的audit赋值给变量preaudit下面使用
+2.checklist = CheckTable.filter(id in post['ids'] and audit = 0 order by time desc)//通过ids，找到checktable对应数据列表
+3.遍历查找结果，检查stb和method分下面情况：
+for (list in checklist){
+    list.audit = preaudit //首先将checktable数据标记为将要审核的状态
+    if (list.stb == "simplelib") {//在对应表找到编辑数据项
+        if (list.method != 2) {
+            edittag = SimpleLib.filter(id = list.sid) 
+        } else {
+            edittag = SimpleLib.filter(id = list.tid) 
+        }
+        if (edittag.type == 0) {
+            list.content = "单质库" + edittag.zhname //更新审核内容
+        } else {
+            list.content = "混合库" + edittag.zhname
+        }
+        edittag.version = max_version['simplelib'] + 1
+    } else {
+        if (list.method != 2) {
+            edittag = Bombinfo.filter(id = list.sid)
+        } else {
+            edittag = Bombinfo.filter(id = list.tid)
+        }
+        list.content = "爆炸案" + edittag.addr
+        edittag.version = max_version['bombinfo'] + 1
+    }
+    list.version = max_version['checktable'] + 1 //更新版本号
+    edittag.audit = preaudit //标记审核状态
+
+    rels = RelationTable.filter(sid = edittag.id and stb = list.stb and audit = 0).list //找到对应关系数据
+    for (rel in rels) { //循环更新所有关系的审核状态
+        rel.audit = preaudit
+        rel.version = max_version['relationtable'] + 1
+    }
+    if (method == 2 && preaudit == 2) {
+        edittag.visible = 0 //如果是删除，标记visible不可见
+    }
+    if (method == 1 && preaudit == 2) {
+        if (list.stb == "simplelib") {
+            edittagSrc = SimpleLib.filter(id = list.tid and audit = 2 and visible = 1) //找到修改原数据
+            edittagSrc.visible = 0 //直接标记原数据为删除
+            edittagSrc.version = max_version['simplelib'] + 1
+
+            category = TableCategory.filter(id = edittagSrc.id and tb = 'simplelib' and visible = 1)
+            category.name = edittag.zhname
+            category.tbid = edittag.id
+            category.version = max_version['tablecategory'] + 1
+
+        } else {
+            edittagSrc = Bombinfo.filter(id = list.tid and audit = 2 and visible = 1) //找到修改原数据
+            edittagSrc.visible = 0 //直接标记原数据为删除
+            edittagSrc.version = max_version['bombinfo'] + 1
+
+            category = TableCategory.filter(id = edittagSrc.id and tb = 'bombinfo' and visible = 1)
+            category.name = edittag.addr
+            category.tbid = edittag.id
+            category.version = max_version['tablecategory'] + 1
+        }
+
+        checklist = CheckTable.filter(tid = edittagSrc.id).list
+        for (cl in checklist) { //将原tid更新为审核通过的id
+            cl.tid = edittag.id
+        }
+    }
+    
+}
+4.update TableVersion //更新对应最大版本号
+5.return success = 1

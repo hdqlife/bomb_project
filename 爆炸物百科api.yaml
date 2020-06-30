@@ -1,0 +1,883 @@
+swagger: "2.0"
+info:
+  description: "爆炸物百科api文档"
+  version: "2.6"
+  title: "Explosive Wiki API"
+host: "119.78.165.201:8000"
+basePath: "/v2"
+tags:
+- name: "general"
+  description: "通用请求"
+- name: "explosive"
+  description: "爆炸物数据库操作"
+- name: "audit"
+  description: "数据审核相关操作"
+- name: "user"
+  description: "用户操作"
+schemes:
+- "http"
+paths:
+  /checkversion:
+    post:
+      tags:
+      - "general"
+      summary: "向服务器请求检查版本号"
+      description: ""
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: "客户端上传的本地版本号数据"
+        schema:
+          type: "object"
+          properties:
+            data:
+              type: "array"
+              items:
+                $ref: "#/definitions/TableVersion"
+      responses:
+        400:
+          description: ""
+          schema:
+            type: "object"
+            properties:
+              ver:
+                type: "array"
+                items:
+                  $ref: "#/definitions/TableVersion"
+              data:
+                type: "object"
+                properties:
+                  simplelib:
+                    type: "array"
+                    items:
+                      $ref: "#/definitions/Simplelib_Server"
+                  bombinfo:
+                    type: "array"
+                    items:
+                      $ref: "#/definitions/Bombinfo_Server"
+                  tablecategory:
+                    type: "array"
+                    items:
+                      $ref: "#/definitions/TableCategory_Server"
+                  relationtable:
+                    type: "array"
+                    items:
+                      $ref: "#/definitions/RelationTable_Server"
+                  checklist:
+                    type: "array"
+                    items:
+                      $ref: "#/definitions/CheckTable_Server"
+  /uploadimg:
+    post:
+      tags:
+      - "general"
+      summary: "上传图片"
+      description: "上传太兹光谱图片"
+      consumes:
+      - "multipart/form-data"
+      parameters:
+      - name: "file"
+        in: "formData"
+        description: "file to upload"
+        required: true
+        type: "file"
+      responses:
+        400:
+          description: ""
+          schema:
+            allOf:
+            - $ref: "#/definitions/GeneralSuccRespond"
+            - type: "object"
+              properties:
+                id:
+                  type: "integer"
+                  description: "服务器图片id"
+  
+  /addcategory:
+    post:
+      tags:
+      - "explosive"
+      summary: "添加分类节点"
+      description: "请求添加分类节点，添加混合物节点、爆炸案节点需要管理员权限，添加子节点（pid!=0）需审核"
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: "节点内容"
+        schema:
+          allOf:
+            - $ref: "#/definitions/CategoryData"
+            - type: "object"
+              properties:
+                tbid:
+                  type: "integer"
+                  format: "int64"
+                  description: "目标数据id"
+      responses:
+        400:
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+        err_code:
+          description: "200:父节点不存在\n201:父节点是被删除的节点"
+  /addrelation:
+    post:
+      tags:
+      - "explosive"
+      summary: "创建链接关系"
+      description: "链接内容由客户端定"
+      consumes:
+        - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: ""
+        schema:
+          $ref: "#/definitions/RelationData"
+      responses:
+        400:
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+  /addlib:
+    post:
+      tags:
+      - "explosive"
+      summary: "添加单质库或混合库"
+      description: ""
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: ""
+        schema:
+          type: "object"
+          properties:
+            data:
+              $ref: "#/definitions/SimplelibData"
+            parentId:
+              type: "integer"
+              format: "int64"
+      responses:
+        400:
+          description: ""
+          schema:
+            allOf:
+            - $ref: "#/definitions/GeneralSuccRespond"
+            - type: "object"
+              properties:
+                id:
+                  type: "integer"
+                  description: "创建成功的数据id"
+  /addexplosion:
+    post:
+      tags:
+      - "explosive"
+      summary: "添加爆炸案"
+      description: ""
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: ""
+        schema:
+          type: "object"
+          properties:
+            data:
+              $ref: "#/definitions/BombinfoData"
+            parentId:
+              type: "integer"
+              format: "int64"
+      responses:
+        400: 
+          description: ""
+          schema:
+            allOf:
+            - $ref: "#/definitions/GeneralSuccRespond"
+            - type: "object"
+              properties:
+                id:
+                  type: "integer"
+                  description: "创建成功的数据id"
+  /editcategory:
+    post:
+      tags:
+      - "explosive"
+      summary: "编辑节点名称"
+      description: ""
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: ""
+        schema:
+          type: "object"
+          properties:
+            id: 
+              type: "integer"
+              format: "int64"
+            name:
+              type: "string"
+              description: "节点名称"
+            version:
+              type: "integer"
+              format: "int"
+              description: "数据版本号"
+      responses:
+        400:
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+        err_code:
+          description: "500:目标节点不存在\n501:数据版本不一致\n502:名字冲突"
+  /editlib:
+    post:
+      tags:
+      - "explosive"
+      summary: "编辑单质库或混合库"
+      description: ""
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: ""
+        schema:
+          type: "object"
+          properties:
+            data:
+              allOf:
+                - type: "object"
+                - properties:
+                    id:
+                      type: "integer"
+                      format: "int64"
+                - $ref: "#/definitions/SimplelibData"
+                - properties:
+                    version:
+                      type: "integer"
+                      format: "int"
+                      description: "本地数据版本号"
+      responses:
+        400: 
+          description: ""
+          schema:
+            allOf:
+            - $ref: "#/definitions/GeneralSuccRespond"
+            - type: "object"
+              properties:
+                id:
+                  type: "integer"
+                  description: "新创建的数据id"
+        err_code:
+          description: "600:数据不存在\n601:数据版本不一致\n602:名字冲突"
+  /editexplosion:
+    post:
+      tags:
+      - "explosive"
+      summary: "编辑爆炸案"
+      description: ""
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: ""
+        schema:
+          type: "object"
+          properties:
+            data:
+              allOf:
+                - type: "object"
+                - properties:
+                    id:
+                      type: "integer"
+                      format: "int64"
+                -  $ref: "#/definitions/BombinfoData"
+                - properties:
+                    version:
+                      type: "integer"
+                      format: "int"
+                      description: "本地数据版本号"
+      responses:
+        400: 
+          description: ""
+          schema:
+            allOf:
+            - $ref: "#/definitions/GeneralSuccRespond"
+            - type: "object"
+              properties:
+                id:
+                  type: "integer"
+                  description: "新创建的数据id"
+        err_code:
+          description: "700:数据不存在\n701:数据版本不一致"
+  /deletecategory:
+    post:
+      tags:
+      - "explosive"
+      summary: "删除指定节点（管理员）"
+      description: "如果节点存在数据，删除指定数据"
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: ""
+        schema:
+          type: "object"
+          properties:
+            id:
+              type: "integer"
+              format: "int64"
+              description: "节点表目标id"
+      responses:
+        400: 
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+  
+  /audittags:
+    post:
+      tags:
+      - "audit"
+      summary: "批量审核对数据的编辑的编辑（管理员）"
+      description: "id为checktable数据id"
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: ""
+        schema:
+          type: "object"
+          properties:
+            ids:
+              type: "array"
+              items:
+                type: "integer"
+                format: "int64"
+                description: "审核表目标id"
+            audit:
+              type: "integer"
+              format: "int"
+              description: "1审核不通过 2审核通过"
+      responses:
+        400: 
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+
+  /login:
+    post:
+      tags:
+      - "user"
+      summary: "账号登录"
+      description: ""
+      consumes:
+      - "application/x-www-form-urlencoded"
+      parameters:
+      - name: "account"
+        in: "formdata"
+        description: "账号"
+        required: true
+        type: "string"
+      - name: "pwd"
+        in: "formdata"
+        description: "密码（md5）"
+        required: true
+        type: "string"
+      responses:
+        400: 
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+  /registerrequest:
+    post:
+      tags:
+      - "user"
+      summary: "普通用户注册申请"
+      description: ""
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        description: ""
+        schema:
+          $ref: "#/definitions/UserData"
+      responses:
+        400: 
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+  /registeruser:
+    post:
+      tags:
+      - "user"
+      summary: "用户注册（管理员）"
+      description: "管理员添加账号"
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        decription: ""
+        schema:
+          allOf:
+          - $ref: "#/definitions/UserData"
+          - type: "object"
+            properties:
+              type:
+                type: "integer"
+                format: "int"
+                description: "用户类型 0管理员 1普通用户"
+      responses:
+        400: 
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+  /audituser:
+    post:
+      tags:
+      - "user"
+      summary: "用户审核（管理员）"
+      description: ""
+      consumes:
+      - "application/x-www-form-urlencoded"
+      parameters:
+      - name: "id"
+        in: "formdata"
+        required: true
+        description: "审核目标id"
+        type: "integer"
+        format: "int64"
+      - name: "audit"
+        in: "formdata"
+        required: true
+        description: "审核状态 1审核未通过 2审核已通过"
+        type: "integer"
+        format: "int"
+      responses:
+          400: 
+            description: ""
+            schema:
+              $ref: "#/definitions/GeneralSuccRespond"
+  /edituserinfo:
+    post:
+      tags:
+      - "user"
+      summary: "编辑用户信息（管理员）"
+      description: ""
+      consumes:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        decription: ""
+        schema:
+          allOf:
+          - $ref: "#/definitions/UserData"
+          - type: "object"
+            properties:
+              type:
+                type: "integer"
+                format: "int"
+                description: "用户类型 0管理员 1普通用户"
+      responses:
+        400: 
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+  /deleteuser:
+    post:
+      tags:
+      - "user"
+      summary: "删除用户（管理员）"
+      description: ""
+      consumes:
+      - "application/x-www-form-urlencoded"
+      parameters:
+      - name: "id"
+        in: "formdata"
+        required: true
+        description: "删除目标id"
+        type: "integer"
+        format: "int64"
+      responses:
+        400: 
+          description: ""
+          schema:
+            $ref: "#/definitions/GeneralSuccRespond"
+definitions:
+  TableVersion:
+    type: "object"
+    properties:
+      tb_name: 
+        type: "string"
+        example: "simplelib"
+      max_version:
+        type: "integer"
+        format: int
+        example: "1"
+  Simplelib_Server:
+    allOf:
+    - type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int64"
+    - $ref: "#/definitions/SimplelibData"
+    - properties:
+        audit:
+          type: "integer"
+          format: "int"
+          description: "审核状态 0审核中 1审核未通过 2审核已通过"
+        version:
+          type: "integer"
+          format: "int"
+          description: "数据版本号"
+  SimplelibData:
+    type: "object"
+    properties:
+      type:
+        type: "integer"
+        format: "int"
+        description: "区别单质还是混合，0表示单质，1表示混合"
+      zhname:
+        type: "string"
+        description: "中文名称"
+      enname:
+        type: "string"
+        description: "英文名称"
+      linkable:
+        type: "integer"
+        format: int
+        description: "表示是否可连接，0表示不可连接"
+      nickname:
+        type: "string"
+        description: "别名"
+      cas:
+        type: "string"
+        description: "CAS号"
+      formula:
+        type: "string"
+        description: "分子式"
+      formulaWeight:
+        type: "string"
+        description: "相对分子质量"
+      OxygenBalance:
+        type: "string"
+        description: "氧平衡"
+      nitrogen:
+        type: "string"
+        description: "含氮量"
+      relativeDensity:
+        type: "string"
+        description: "相对密度"
+      meltingPoint:
+        type: "string"
+        description: "熔点"
+      boilingPoint:
+        type: "string"
+        description: "沸点"
+      flashPoint:
+        type: "string"
+        description: "闪点"
+      decompTemp:
+        type: "string"
+        description: "分解温度"
+      standardHeat:
+        type: "string"
+        description: "标准生成热"
+      heatCapacity:
+        type: "string"
+        description: "热容"
+      character:
+        type: "string"
+        description: "性状"
+      standardmg:
+        type: "string"
+        description: "标准摩尔生成焓"
+      wettability:
+        type: "string"
+        description: "易湿性"
+      combustionheat:
+        type: "string"
+        description: "燃烧热"
+      burstspeed:
+        type: "string"
+        description: "爆速"
+      temp:
+        type: "string"
+        description: "爆温"
+      bursthot:
+        type: "string"
+        description: "爆热"
+      burstpress:
+        type: "string"
+        description: "爆压"
+      burstvol:
+        type: "string"
+        description: "爆容"
+      burstpoint:
+        type: "string"
+        description: "5S爆发点"
+      frisen:
+        type: "string"
+        description: "摩擦感度"
+      impsen:
+        type: "string"
+        description: "撞击感度"
+      stasen:
+        type: "string"
+        description: "静电感度"
+      explosionlimit:
+        type: "string"
+        description: "爆炸极限"
+      svp:
+        type: "string"
+        description: "蒸气压"
+      img:
+        type: "string"
+        description: "imgtable表中数据的id列表"
+      visible:
+        type: "integer"
+        format: "int"
+        description: "表示删除 0表示已删除不可见"
+
+  Bombinfo_Server:
+    allOf:
+    - type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int64"
+    - $ref: "#/definitions/BombinfoData"
+    - properties:
+        audit:
+          type: "integer"
+          format: "int"
+          description: "审核状态 0审核中 1审核未通过 2审核已通过"
+        version:
+          type: "integer"
+          format: "int"
+          description: "数据版本号"
+  BombinfoData:
+    type: "object"
+    properties:
+      casename:
+        type: "string"
+        description: "案件名称"
+      time:
+        type: "integer"
+        format: "int"
+        description: "时间戳"
+      addr:
+        type: "string"
+        description: "地址"
+      casualties:
+        type: "string"
+        description: "伤亡情况"
+      visible:
+          type: "integer"
+          format: "int"
+          description: "表示删除 0表示已删除不可见"
+  TableCategory_Server:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      pid:
+        type: "integer"
+        format: "int64"
+        description: "父节点"
+      tb:
+        type: "string"
+        description: "目标表名"
+      tbid:
+        type: "integer"
+        format: "int64"
+        description: "目标数据id"
+      name:
+        type: "string"
+        description: "节点名称"
+      type:
+        type: "integer"
+        format: "int"
+        description: "链接库类型"
+      version:
+        type: "integer"
+        format: "int"
+        description: "数据版本号"
+  CategoryData:
+    type: "object"
+    properties:
+      pid:
+        type: "integer"
+        format: "int64"
+        description: "父节点"
+      tb:
+        type: "string"
+        description: "目标表名"
+      name:
+        type: "string"
+        description: "节点名称"
+      type:
+        type: "integer"
+        format: "int"
+        description: "链接库类型"
+  RelationTable_Server:
+    allOf:
+    - type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int64"
+        audit:
+          type: "integer"
+          format: "int"
+          description: "审核状态 0审核中 1审核未通过 2审核已通过"
+    - $ref: "#/definitions/RelationData"
+    - properties:
+        version:
+          type: "integer"
+          format: "int"
+          description: "数据版本号"
+  RelationData:
+    type: "object"
+    properties:
+      stb:
+        type: "string"
+        description: "链接原表名"
+      sid:
+        type: "integer"
+        format: "int64"
+        description: "链接原表数据id"
+      content:
+        type: "string"
+        description: "链接内容，格式由客户端定"
+  CheckTable_Server:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      stb:
+        type: "string"
+        description: "操作目标表名"
+      sid:
+        type: "integer"
+        format: "int64"
+        description: "操作目标表数据id"
+      tid:
+        type: "integer"
+        format: "int64"
+        description: "操作目标表原数据id"
+      audit:
+        type: "integer"
+        format: "int"
+        description: "审核状态 0审核中 1审核未通过 2审核已通过"
+      method:
+        type: "integer"
+        format: "int"
+        description: "操作方式 0添加 1修改 2删除"
+      account:
+        type: "string"
+        description: "操作用户账号"
+      content:
+        type: "string"
+      time:
+        type: "integer"
+        format: "int64"
+        description: "数据修改时间"
+      version:
+        type: "integer"
+        format: "int"
+        description: "数据版本号"
+  ImgTable_Server:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      md5:
+        type: "string"
+        description: "对文件内容的md5值计算"
+      paths:
+        type: "string"
+        description: "图片的路径"
+      version:
+        type: "integer"
+        format: "int"
+        description: "数据版本号"
+  User_Server:
+    allOf:
+    - type: "object"
+      properties:
+        id:
+          type: "integer"
+          format: "int64"
+        type:
+          type: "integer"
+          format: "int"
+          description: "用户类型 0管理员 1普通用户"
+    - $ref: "#/definitions/UserData"
+    - properties:
+        visible:
+          type: "integer"
+          format: "int"
+          description: "表示删除 0表示已删除不可见"
+        audit:
+          type: "integer"
+          format: "int"
+          description: "审核状态 0审核中 1审核未通过 2审核已通过"
+        version:
+          type: "integer"
+          format: "int"
+          description: "数据版本号"
+  UserData:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+        description: "姓名"
+      account:
+        type: "string"
+        description: "账号"
+      pwd:
+        type: "string"
+        description: "密码"
+      phone:
+        type: "string"
+        description: "手机号" 
+      
+  GeneralSuccRespond:
+    type: "object"
+    properties:
+      success:
+        type: "integer"
+        format: int
+        example: 1
+      msg:
+        type: "integer"
+        description: "查看err_code描述"

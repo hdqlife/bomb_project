@@ -1,0 +1,38 @@
+# coding: utf-8
+from sqlalchemy import Column, LargeBinary, String, Text
+from sqlalchemy.dialects.mysql import INTEGER, LONGTEXT
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+metadata = Base.metadata
+
+
+class TbConfig(Base):
+    __tablename__ = 'tb_config'
+
+    id = Column(INTEGER(11), primary_key=True)
+    name = Column(String(256))
+    type = Column(String(256))
+    data = Column(Text)
+
+
+class TbHistory(Base):
+    __tablename__ = 'tb_history'
+
+    id = Column(INTEGER(11), primary_key=True)
+    flag = Column(INTEGER(11))
+    user_id = Column(String(256))
+    i = Column(LargeBinary)
+    o = Column(LargeBinary)
+    t = Column(INTEGER(11))
+
+
+class TbLog(Base):
+    __tablename__ = 'tb_log'
+
+    id = Column(INTEGER(11), primary_key=True)
+    user_id = Column(String(256))
+    i = Column(Text)
+    o = Column(LONGTEXT)
+    url = Column(String(256))
+    t = Column(INTEGER(11))
