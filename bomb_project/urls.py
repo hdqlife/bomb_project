@@ -16,6 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from BombApp.views import *
+from BombApp.search import *
 urlpatterns = [
     # path('admin/', admin.site.urls),
     path('checkversion', checkversion),
@@ -35,4 +36,8 @@ urlpatterns = [
     path('edituserinfo', edituserinfo),
     path('deleteuser', deleteuser),
     path('deletecategory', deletecategory),
+    path('TezImg', TezImg),
+    path('boomRelevanceInf', boomRelevanceInf),
+    path('simpleRelevanceInf', simpleRelevanceInf),
+    path('nodeTimeBomb', nodeTimeBomb),
 ]
