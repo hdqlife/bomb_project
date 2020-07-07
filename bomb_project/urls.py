@@ -40,4 +40,7 @@ urlpatterns = [
     path('boomRelevanceInf', boomRelevanceInf),
     path('simpleRelevanceInf', simpleRelevanceInf),
     path('nodeTimeBomb', nodeTimeBomb),
+    path('simClassify', simClassify),
+    path('bombClassify', bombClassify),
+    path('moleculeFormat', moleculeFormat),
 ]

@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from BombApp.models import *
 from django.db.models import Q
 from django.core.paginator import Paginator
-import json
+import pypinyin
 from django.core import serializers
 from _collections import defaultdict
 
@@ -31,36 +31,43 @@ def boomRelevanceInf(request):  # 3.查找爆炸案关联的单质、混合库�
         ).values()
         # print(bomb)
         s = bomb[0]['content'].replace(',\n',"").replace('[','').replace(']','').replace('"','').split()
-        # print(s)
+        print(s)
         relname_list = []
 
         result = []
-        for i in s:
-            sim = Simplelib.objects.filter(
-                Q(zhname=i) |
-                Q(enname__icontains=i) |
-                Q(nickname__icontains=i) |
-                Q(cas=i)
-            ).values('id','zhname','enname','nickname','cas')
-            # print(sim)
-            if sim:
-                relname_list.append(i)
-                relatedname = relname_list[0]
-                relatedId = sim[0]['id']
-                isNot = True
-                print(relatedname,relatedId,isNot)
+        # for i in s:
+        sim = Simplelib.objects.filter(
+            Q(zhname__in=s) |
+            Q(enname__in=s) |
+            Q(nickname__in=s) |
+            Q(cas__in=s)
+        ).values('id','zhname','enname','nickname','cas').distinct().order_by("id")
+        # print(sim)
+        q = sim[0]
+        print(q)
+        for key,value in q.items():
+            # print(key,value)
+            q = [i for i in s if value==i]
+            print(q)
 
-            else:
-                relatedname = i
-                relatedId = -1
-                isNot = False
-                print(relatedname, relatedId, isNot)
+        # if sim:
+        #     relname_list.append(i)
+        #     relatedname = relname_list[0]
+        #     relatedId = sim[0]['id']
+        #     isNot = True
+        #     print(relatedname,relatedId,isNot)
 
-            result.append(relatedname)
-            result.append(relatedId)
-            result.append(isNot)
-        list(set(result)).sort(key=result.index)
-        print(list(set(result)))
+            # else:
+            #     relatedname = i
+            #     relatedId = -1
+            #     isNot = False
+            #     print(relatedname, relatedId, isNot)
+
+        #     result.append(relatedname)
+        #     result.append(relatedId)
+        #     result.append(isNot)
+        #
+        # print(list(set(result)))
     return JsonResponse({'success': 0, 'msg': 0})
 
 
@@ -118,4 +125,43 @@ def nodeTimeBomb(request):  # 2.通过节点名称或时间段搜索爆炸案
     return JsonResponse({"msg":0})
 
 
+def hanzi_to_pinyin(last_name):  # 排序
+    rows = pypinyin.pinyin(last_name, style=pypinyin.NORMAL)  # 获取首字母
+    return ''.join(row[0][0] for row in rows if len(row) > 0)
+
+
+def simClassify(request): #列出单质库第一级分类列表
+    classify = CategoryTable.objects.filter(
+        pid=0,
+        type=0,
+        tb='simplelib'
+    ).values('name','id')
+
+    if classify:
+        cls = [{'nodename':i['name'],'nodeid':i['id']}for i in classify]
+        cls.sort(key=lambda x: hanzi_to_pinyin(x["nodename"][0]))
+
+        return JsonResponse({'success': 0, 'msg': cls})
+
+
+def bombClassify(request):  # 列出爆炸案第一、二级分类列表
+    pid = request.GET.get('pid', None)
+
+    classify = CategoryTable.objects.filter(
+        pid=pid,
+        tb='bombinfo'
+    ).values('name', 'id')
+    print(classify)
+    if classify:
+        cls = [{'nodename':i['name'],'nodeid':i['id']}for i in classify]
+        cls.sort(key=lambda x: hanzi_to_pinyin(x["nodename"][0]))
+        return JsonResponse({'success': 0, 'msg': cls})
+
+
+def moleculeFormat(request):   # 分子式格式化显示
+    formula = request.GET.get('formula',None).replace('0', "₀").replace('1', "₁").replace('2', "₂").replace('3', "₃")\
+        .replace('4', "₄").replace("5", "₅").replace('6', "₆").replace('7', "₇").replace('8', "₈").replace('9', "₉")
+    print(formula)
+
+    return JsonResponse({'success': 0, 'msg': formula})
 
