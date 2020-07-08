@@ -43,4 +43,5 @@ urlpatterns = [
     path('simClassify', simClassify),
     path('bombClassify', bombClassify),
     path('moleculeFormat', moleculeFormat),
+    path('mixtureIngredient', mixtureIngredient),
 ]

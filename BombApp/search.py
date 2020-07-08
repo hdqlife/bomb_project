@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 import pypinyin
 from django.core import serializers
+import re
 from _collections import defaultdict
 
 
@@ -164,4 +165,31 @@ def moleculeFormat(request):   # 分子式格式化显示
     print(formula)
 
     return JsonResponse({'success': 0, 'msg': formula})
+
+
+def mixtureIngredient(request):   # 6查找混合库有关的混合物组成成分表
+    id = request.GET.get('id', None)
+    rel = RelationTable.objects.filter(
+        id=id,
+        stb='simplelib'
+    ).values('content')
+    patternSim = re.compile(r'"name": (.*)')
+    patternMix = re.compile(r'"linktag": (.*),')
+    sim = patternSim.findall(rel[0]['content'])
+    mix = patternMix.findall(rel[0]['content'])
+    m = mix[0].replace('"','')
+    sim_id = Simplelib.objects.filter(
+        type=1
+    ).filter(
+        Q(zhname=m) |
+        Q(enname=m) |
+        Q(cas=m) |
+        Q(nickname__icontains=m)
+    ).values()
+    print(sim_id)
+    # if m === sim_id[0]:
+    #     print(1)
+    for s in sim:
+        print(s.replace('"',''))
+    return JsonResponse({'success': 0, 'msg': 0})
 
